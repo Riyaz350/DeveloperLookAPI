@@ -1,5 +1,5 @@
 const createOTP = require("../../utils/createOTP")
-const { hashData } = require("../../utils/hashData")
+const { hashData, verifyHashedData } = require("../../utils/hashData")
 const sendEmail = require("../../utils/sendEmail")
 const OTP = require("./model")
 const { AUTH_EMAIL } = process.env
@@ -21,7 +21,7 @@ const sendOtp = async ({ email, subject, message, duration = 1 }) => {
         {
             from: AUTH_EMAIL,
             to: email,
-            subject: subject, 
+            subject: subject,
             html: `<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;">
             <table width="100%" cellpadding="0" cellSpacing="0" border="0" align="center">
                 <tr>
@@ -57,14 +57,14 @@ const sendOtp = async ({ email, subject, message, duration = 1 }) => {
 
         const hashedOTP = await hashData(createdOTP)
         const newOTP = await new OTP({
-            email, 
-            otp:hashedOTP,
-            created:Date.now(),
-            expires:Date.now()+120000*+duration
-    });
+            email,
+            otp: hashedOTP,
+            created: Date.now(),
+            expires: Date.now() + 120000 * +duration
+        });
 
-    const createdOTPRecord = await newOTP.save()
-    return createdOTPRecord;
+        const createdOTPRecord = await newOTP.save()
+        return createdOTPRecord;
 
 
     } catch (error) {
@@ -72,4 +72,18 @@ const sendOtp = async ({ email, subject, message, duration = 1 }) => {
     }
 }
 
-module.exports = {sendOtp}
+const verifyOTP = async ({ email, userOTP }) => {
+    try {
+        const currentUser = await OTP.findOne({ email })
+        const hashedOTP = currentUser.otp
+        // const expired = 
+        const hashData = await verifyHashedData(userOTP, hashedOTP)
+        const result = {OPTMatch : hashData, OTPExpired:currentUser.expires >= Date.now()}
+        return result
+    } catch (error) {
+        throw error
+    }
+
+}
+
+module.exports = { sendOtp, verifyOTP }
