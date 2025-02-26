@@ -10,7 +10,7 @@ const secureRoute = async (req,res,next)=>{
 
     try {
         const decoded = await jwt.verify(token, TOKEN_KEY)
-        req.currentUse = decoded
+        req.currentUser = decoded
     } catch (error) {
         return res.status(401).send("Invalid token")
     }
