@@ -1,5 +1,5 @@
 const express = require("express")
-const sendOtp = require("./controller")
+const {sendOtp} = require("./controller")
 const router = express.Router()
 
 
