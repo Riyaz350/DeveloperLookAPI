@@ -46,6 +46,7 @@ router.get(`/:email`, async (req, res) => {
 router.post("/signup", async (req, res) => {
     try {
         let { email, password } = req.body
+        console.log(req.body)
         email = email.trim()
         password = password.trim()
         const newUser = await createUser({
