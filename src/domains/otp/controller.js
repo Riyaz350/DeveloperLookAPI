@@ -1,6 +1,7 @@
 const createOTP = require("../../utils/createOTP")
 const { hashData, verifyHashedData } = require("../../utils/hashData")
 const sendEmail = require("../../utils/sendEmail")
+const User = require("../user/model")
 const OTP = require("./model")
 const { AUTH_EMAIL } = process.env
 const sendOtp = async ({ email, subject, message, duration = 1 }) => {
@@ -37,7 +38,7 @@ const sendOtp = async ({ email, subject, message, duration = 1 }) => {
                                     <p style="margin: 0 0 10px;">Hello,</p>
                                     <p style="margin: 0 0 10px;">${message}</p>
                                     <p style="margin: 0 0 10px;"><strong>Your OTP:</strong> <span style="font-size: 20px; color: #007bff;">${createdOTP}</span></p>
-                                    <p style="margin: 0 0 10px;">This OTP is valid for <strong>${duration}</strong> minutessss.</p>
+                                    <p style="margin: 0 0 10px;">This OTP is valid for <strong>2</strong> minutes.</p>
                                 </td>
                             </tr>
                             <tr>
@@ -74,16 +75,28 @@ const sendOtp = async ({ email, subject, message, duration = 1 }) => {
 
 const verifyOTP = async ({ email, userOTP }) => {
     try {
-        const currentUser = await OTP.findOne({ email })
-        const hashedOTP = currentUser.otp
-        // const expired = 
-        const hashData = await verifyHashedData(userOTP, hashedOTP)
-        const result = {OPTMatch : hashData, OTPExpired:currentUser.expires >= Date.now()}
-        return result
-    } catch (error) {
-        throw error
-    }
+        const currentUser = await OTP.findOne({ email });
 
-}
+        if (!currentUser) {
+            throw new Error("User OTP not found.");
+        }
+
+        const hashedOTP = currentUser.otp;
+        console.log(email, userOTP);
+
+        const isValidOTP = await verifyHashedData(userOTP, hashedOTP);
+        const isExpired = currentUser.expires <= Date.now();
+
+        if (isValidOTP && !isExpired) {
+            // ✅ Update the user status in the database
+            await User.updateOne({ email }, { $set: { verified: true } });
+        }
+
+        return { ValidOTP: isValidOTP, OTPExpired: isExpired };
+    } catch (error) {
+        throw error;
+    }
+};
+
 
 module.exports = { sendOtp, verifyOTP }

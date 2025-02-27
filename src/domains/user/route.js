@@ -11,15 +11,15 @@ router.get("/", async (req, res) => {
 // sign in 
 router.post('/', async (req, res) => {
     try {
-        let { email, password } =await req.body
+        let { email, password } = await req.body
         email = email.trim()
         password = password.trim()
-        
-        if(!(email && password)){
-            throw Error ("Empty credentials")
+
+        if (!(email && password)) {
+            throw Error("Empty credentials")
         }
 
-        const authenticatedUser = await authenticateUser({email, password})
+        const authenticatedUser = await authenticateUser({ email, password })
         res.status(200).send(authenticatedUser)
     } catch (error) {
         throw error
@@ -45,16 +45,20 @@ router.get(`/:email`, async (req, res) => {
 // signup unique user data
 router.post("/signup", async (req, res) => {
     try {
-        let { email, password } = req.body
-        console.log(req.body)
+        let { email, password, subject, message, duration } = req.body
         email = email.trim()
         password = password.trim()
         const newUser = await createUser({
-            email, password
+            email, password, subject, message, duration
         })
         res.status(200).json(newUser)
     } catch (error) {
-        res.status(400).send(error.message)
+        console.log(error); // ✅ Logs full error in server console
+
+        res.status(400).json({
+            success: false,
+            message: error.message || "An unknown error occurred",
+        });
     }
 })
 
