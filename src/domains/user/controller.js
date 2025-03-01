@@ -1,10 +1,10 @@
-const createToken = require("../../utils/createToken");
+const {createToken} = require("../../utils/createToken");
 const { hashData, verifyHashedData } = require("../../utils/hashData");
 const User = require("./model");
 const { sendOtp } = require("./../otp/controller")
 const authenticateUser = async (data) => {
     try {
-        const { email, password } = data
+        const { email, password, subject, message, duration } = data
         const userData = await User.findOne({ email })
         if (!userData) {
             throw Error("invalid credentials")
@@ -19,10 +19,19 @@ const authenticateUser = async (data) => {
 
         // creating token
         try {
+            const createdOTP = await sendOtp({
+                email,
+                subject,
+                message,
+                duration
+            });
+
             const tokenData = { userId: userData._id, email }
+            console.log(tokenData)
             const token = await createToken(tokenData)
             userData.token = token
-            return userData
+            await User.updateOne({ email }, { $set: { token: token } });
+            return { userData, createdOTP };
         } catch (error) {
             throw error
         }
@@ -31,26 +40,30 @@ const authenticateUser = async (data) => {
         throw error
     }
 }
+
+const sendOTPAgain = async (data) => {
+    try {
+        const { email, password, subject, message, duration } = data;
+        console.log(data)
+        const otpSender = await sendOtp({ email, subject, message, duration })
+        return otpSender
+    } catch (error) {
+        throw error
+    }
+}
 const createUser = async (data) => {
     try {
-        console.log("Received Data:", data); 
-
         const { email, password, subject, message, duration } = data;
-
-         
-
         const existingUser = await User.findOne({ email });
 
         if (existingUser && !existingUser.verified) {
             const deleteUser = await User.deleteOne({ email });
-            console.log("Deleted User:", deleteUser);
-
+            console.log('tried again', deleteUser.acknowledged)
             if (deleteUser.acknowledged) {
                 return await createNewUser({ email, password, subject, message, duration });
             }
         } else if (existingUser && existingUser.verified) {
             throw Error("User with this email already exists.");
-            console.log('not verified')
         } else {
             return await createNewUser({ email, password, subject, message, duration });
         }
@@ -89,7 +102,4 @@ const createNewUser = async ({ email, password, subject, message, duration }) =>
     }
 };
 
-module.exports = { createUser };
-
-
-module.exports = { createUser, authenticateUser }
+module.exports = { createUser, authenticateUser, sendOTPAgain }

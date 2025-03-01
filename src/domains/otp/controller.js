@@ -4,7 +4,9 @@ const sendEmail = require("../../utils/sendEmail")
 const User = require("../user/model")
 const OTP = require("./model")
 const { AUTH_EMAIL } = process.env
-const sendOtp = async ({ email, subject, message, duration = 1 }) => {
+const sendOtp = async ({ email, subject, message, duration = 2 }) => {
+    console.log('this is otp',email, subject, message, duration)
+
     try {
         if (!email && !subject && !message) {
             throw Error("Provide email, subject & message")
@@ -66,12 +68,12 @@ const sendOtp = async ({ email, subject, message, duration = 1 }) => {
 
         const createdOTPRecord = await newOTP.save()
         return createdOTPRecord;
-
-
     } catch (error) {
         throw error
     }
 }
+
+
 
 const verifyOTP = async ({ email, userOTP }) => {
     try {
@@ -99,4 +101,4 @@ const verifyOTP = async ({ email, userOTP }) => {
 };
 
 
-module.exports = { sendOtp, verifyOTP }
+module.exports = { sendOtp, verifyOTP  }

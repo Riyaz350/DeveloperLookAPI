@@ -6,7 +6,8 @@ const toDoSchema = new Schema({
     description: String,
     dueDate: String,
     status:String,
-    priority:String
+    priority:String,
+    email:String
 })
 
 const ToDo = mongoose.model("Todo", toDoSchema)

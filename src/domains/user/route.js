@@ -1,6 +1,7 @@
 const express = require('express')
-const { createUser, authenticateUser } = require('./controller')
+const { createUser, authenticateUser, sendOTPAgain } = require('./controller')
 const User = require('./model')
+const { decodeToken } = require('../../utils/createToken')
 const router = express.Router()
 
 // get all user data
@@ -8,24 +9,39 @@ router.get("/", async (req, res) => {
     res.status(200).send('This is the Developer look')
 })
 
-// sign in 
-router.post('/', async (req, res) => {
+
+router.post("/decodeToken", async (req, res) => {
     try {
-        let { email, password } = await req.body
+        const decodedData = await decodeToken(req.body)
+        res.status(200).send(decodedData)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+
+
+
+// sign in 
+router.post('/signin', async (req, res) => {
+    try {
+        let { email, password, subject, message, duration } = await req.body
         email = email.trim()
         password = password.trim()
-
         if (!(email && password)) {
             throw Error("Empty credentials")
         }
-
-        const authenticatedUser = await authenticateUser({ email, password })
+        const authenticatedUser = await authenticateUser({ email, password, subject, message, duration })
         res.status(200).send(authenticatedUser)
     } catch (error) {
-        throw error
+        console.log(error)
+        res.status(400).json({
+            success: false,
+            message: error.message || "An unknown error occurred",
+        });
     }
-
 })
+
 
 // get single user data
 router.get(`/:email`, async (req, res) => {
@@ -42,6 +58,18 @@ router.get(`/:email`, async (req, res) => {
     }
 })
 
+
+// sending otp again
+
+router.post('/otpAgain', async (req, res) => {
+    try {
+        const sentOTP = sendOTPAgain(req.body)
+        res.status(200).send(sentOTP)
+    } catch (error) {
+        res.status(401).send(error)
+    }
+})
+
 // signup unique user data
 router.post("/signup", async (req, res) => {
     try {
@@ -53,8 +81,6 @@ router.post("/signup", async (req, res) => {
         })
         res.status(200).json(newUser)
     } catch (error) {
-        console.log(error); // ✅ Logs full error in server console
-
         res.status(400).json({
             success: false,
             message: error.message || "An unknown error occurred",
